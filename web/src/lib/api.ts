@@ -24,3 +24,7 @@ export function captureUrl(url: string): Promise<{ image_path: string; title: st
 export function analyzeItem(itemId: string): Promise<{ item: unknown }> {
   return authedFetch('/analyze', { item_id: itemId })
 }
+
+export function analyzeBrand(input: { url?: string; image_path?: string }): Promise<{ draft: Record<string, unknown> }> {
+  return authedFetch('/analyze-brand', input)
+}

@@ -69,6 +69,64 @@ export function buildDesignMd(item: Item, family: AestheticFamily | null, brand:
   return lines.join('\n')
 }
 
+/**
+ * Brand-level DESIGN.md: the brand's base visual world, usable in Claude Code
+ * even without an inspiration item. Item exports layer inspiration on top.
+ */
+export function buildBrandDesignMd(brand: Brand): string {
+  const t = brand.tokens || {}
+  const L: string[] = []
+  L.push(`# DESIGN.md — ${brand.name} brand`)
+  L.push('')
+  L.push(`> Generated from design-library brand profile on ${new Date().toISOString().slice(0, 10)}.`)
+  L.push('')
+  if (t.positioning || t.audience) {
+    L.push('## Brand')
+    L.push('')
+    if (t.positioning) L.push(`**Positioning:** ${t.positioning}`)
+    if (t.audience) L.push(`**Audience:** ${t.audience}`)
+    L.push('')
+  }
+  if (t.colors?.length) {
+    L.push('## Colors')
+    L.push('')
+    for (const c of t.colors) L.push(`- **${c.name}** \`${c.hex}\` — ${c.usage}`)
+    L.push('')
+  }
+  if (t.typography && Object.values(t.typography).some(Boolean)) {
+    L.push('## Typography')
+    L.push('')
+    const ty = t.typography
+    if (ty.display) L.push(`- **Display:** ${ty.display}`)
+    if (ty.body) L.push(`- **Body:** ${ty.body}`)
+    if (ty.mono) L.push(`- **Mono/labels:** ${ty.mono}`)
+    if (ty.weights) L.push(`- **Weights:** ${ty.weights}`)
+    if (ty.min_body_px) L.push(`- **Minimum body size:** ${ty.min_body_px}`)
+    if (ty.fallbacks) L.push(`- **Fallbacks:** ${ty.fallbacks}`)
+    L.push('')
+  }
+  if (t.layout && Object.values(t.layout).some(Boolean)) {
+    L.push('## Layout character')
+    L.push('')
+    if (t.layout.density) L.push(`- **Density:** ${t.layout.density}`)
+    if (t.layout.radius) L.push(`- **Corner radius:** ${t.layout.radius}`)
+    if (t.layout.shadows) L.push(`- **Shadows/elevation:** ${t.layout.shadows}`)
+    if (t.layout.spacing) L.push(`- **Spacing rhythm:** ${t.layout.spacing}`)
+    L.push('')
+  }
+  if (t.imagery) { L.push('## Imagery'); L.push(''); L.push(t.imagery); L.push('') }
+  if (t.motion) { L.push('## Motion'); L.push(''); L.push(t.motion); L.push('') }
+  if (brand.voice_rules) { L.push('## Voice'); L.push(''); L.push(brand.voice_rules); L.push('') }
+  L.push('## Anti-references (never do)')
+  L.push('')
+  const never = t.never?.length ? t.never : []
+  for (const n of never) L.push(`- ${n}`)
+  if (!never.some(n => /inter/i.test(n))) L.push('- No Inter font.')
+  if (!never.some(n => /gradient/i.test(n))) L.push('- No purple-to-blue gradients. No gradient text.')
+  L.push('')
+  return L.join('\n')
+}
+
 export function downloadText(filename: string, text: string) {
   const blob = new Blob([text], { type: 'text/markdown' })
   const url = URL.createObjectURL(blob)

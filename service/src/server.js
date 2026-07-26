@@ -50,22 +50,17 @@ async function requireUser(req, res, next) {
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
-// ---- POST /capture { url } → full-page screenshot into storage ----
-app.post('/capture', requireUser, async (req, res) => {
-  const { url } = req.body || {};
-  if (!url || !/^https?:\/\//i.test(url)) {
-    return res.status(400).json({ error: 'Provide a valid http(s) url' });
-  }
-  let browser;
+// ---- shared: resilient full-page screenshot ----
+async function capturePage(url) {
+  const browser = await chromium.launch({ args: ['--no-sandbox', '--disable-dev-shm-usage'] });
   try {
-    browser = await chromium.launch({ args: ['--no-sandbox', '--disable-dev-shm-usage'] });
     const page = await browser.newPage({
       viewport: { width: 1440, height: 900 },
       deviceScaleFactor: 1.5,
       userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
     });
-    // Resilient navigation: bot-protected/heavy sites often never reach full
-    // "load". Get the DOM, then opportunistically settle, then shoot what we have.
+    // Bot-protected/heavy sites often never reach full "load". Get the DOM,
+    // then opportunistically settle, then shoot what we have.
     let navError = null;
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(e => { navError = e; });
     if (page.url() === 'about:blank') throw navError ?? new Error('Navigation failed');
@@ -73,8 +68,20 @@ app.post('/capture', requireUser, async (req, res) => {
     await page.waitForTimeout(2500); // settle animations/lazy images
     const title = await page.title();
     const png = await page.screenshot({ fullPage: true, type: 'png' });
-    await browser.close();
-    browser = null;
+    return { png, title };
+  } finally {
+    await browser.close().catch(() => {});
+  }
+}
+
+// ---- POST /capture { url } → full-page screenshot into storage ----
+app.post('/capture', requireUser, async (req, res) => {
+  const { url } = req.body || {};
+  if (!url || !/^https?:\/\//i.test(url)) {
+    return res.status(400).json({ error: 'Provide a valid http(s) url' });
+  }
+  try {
+    const { png, title } = await capturePage(url);
 
     const imagePath = `captures/${new Date().toISOString().slice(0, 10)}-${crypto.randomUUID()}.png`;
     const { error: upErr } = await admin.storage.from('inspiration').upload(imagePath, png, {
@@ -85,9 +92,99 @@ app.post('/capture', requireUser, async (req, res) => {
 
     res.json({ image_path: imagePath, title: title || url, source_url: url });
   } catch (err) {
-    if (browser) await browser.close().catch(() => {});
     console.error('capture error:', err.message);
     res.status(500).json({ error: `Capture failed: ${err.message}` });
+  }
+});
+
+// ---- brand extraction schema ----
+const brandTool = {
+  name: 'record_brand_guidelines',
+  description: 'Record draft brand guidelines extracted from a website screenshot or brand asset.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      positioning: { type: 'string', description: 'One-line positioning statement inferred from the material.' },
+      audience: { type: 'string', description: 'Who this brand appears to speak to.' },
+      colors: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', description: 'Role name, e.g. Primary, Accent, Ground, Text' },
+            hex: { type: 'string' },
+            usage: { type: 'string', description: 'Usage rule, e.g. "interactive elements only"' }
+          },
+          required: ['name', 'hex', 'usage']
+        }
+      },
+      typography: {
+        type: 'object',
+        properties: {
+          display: { type: 'string', description: 'Display face or closest classification' },
+          body: { type: 'string' },
+          mono: { type: 'string', description: 'Mono/label face if any, else empty' },
+          weights: { type: 'string' },
+          min_body_px: { type: 'string' },
+          fallbacks: { type: 'string' }
+        }
+      },
+      layout: {
+        type: 'object',
+        properties: {
+          density: { type: 'string' },
+          radius: { type: 'string' },
+          shadows: { type: 'string' },
+          spacing: { type: 'string' }
+        }
+      },
+      imagery: { type: 'string', description: 'Photography/illustration style rules observed.' },
+      motion: { type: 'string', description: 'Motion character, or "static/unknown".' },
+      voice_rules: { type: 'string', description: 'Tone-of-voice rules inferred from copy visible in the material.' },
+      never: { type: 'array', items: { type: 'string' }, description: 'Anti-references: things this brand should never do.' }
+    },
+    required: ['colors', 'typography']
+  }
+};
+
+// ---- POST /analyze-brand { url } or { image_path } → draft guidelines (NOT saved) ----
+app.post('/analyze-brand', requireUser, async (req, res) => {
+  const { url, image_path } = req.body || {};
+  if (!url && !image_path) return res.status(400).json({ error: 'Provide url or image_path' });
+  try {
+    let buf;
+    if (url) {
+      if (!/^https?:\/\//i.test(url)) return res.status(400).json({ error: 'Provide a valid http(s) url' });
+      const { png } = await capturePage(url);
+      buf = png;
+    } else {
+      const { data: img, error: dlErr } = await admin.storage.from('inspiration').download(image_path);
+      if (dlErr) throw new Error(`Image download failed: ${dlErr.message}`);
+      buf = Buffer.from(await img.arrayBuffer());
+    }
+    if (buf.length > 4.5 * 1024 * 1024) {
+      return res.status(400).json({ error: 'Image too large for analysis (>4.5MB).' });
+    }
+
+    const msg = await anthropic.messages.create({
+      model: ANTHROPIC_MODEL,
+      max_tokens: 3000,
+      tools: [brandTool],
+      tool_choice: { type: 'tool', name: 'record_brand_guidelines' },
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: 'image/png', data: buf.toString('base64') } },
+          { type: 'text', text: 'You are a senior brand designer reverse-engineering brand guidelines from this material. Extract precise, defensible values: sample real hexes, name each color\'s usage rule as observed (e.g. accent only on CTAs), classify the typefaces, describe layout, imagery, and motion character, and infer tone-of-voice rules from any visible copy. Where the material gives no evidence, leave the field brief and hedged rather than inventing. Record with the record_brand_guidelines tool.' },
+        ],
+      }],
+    });
+    const toolUse = msg.content.find(c => c.type === 'tool_use');
+    if (!toolUse) throw new Error('Model returned no structured guidelines');
+    res.json({ draft: toolUse.input });
+  } catch (err) {
+    console.error('analyze-brand error:', err.message);
+    res.status(500).json({ error: `Brand analysis failed: ${err.message}` });
   }
 });
 

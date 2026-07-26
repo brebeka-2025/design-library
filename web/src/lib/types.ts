@@ -1,10 +1,27 @@
 export type ItemStatus = 'pending_review' | 'approved' | 'archived'
 
+export interface BrandColor {
+  name: string
+  hex: string
+  usage: string
+}
+
+export interface BrandTokens {
+  positioning?: string
+  audience?: string
+  colors?: BrandColor[]
+  typography?: { display?: string; body?: string; mono?: string; weights?: string; min_body_px?: string; fallbacks?: string }
+  layout?: { density?: string; radius?: string; shadows?: string; spacing?: string }
+  imagery?: string
+  motion?: string
+  never?: string[]
+}
+
 export interface Brand {
   id: string
   key: string
   name: string
-  tokens: Record<string, unknown>
+  tokens: BrandTokens
   voice_rules: string | null
   notes: string | null
 }
