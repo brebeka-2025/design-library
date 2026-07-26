@@ -31,10 +31,55 @@ export default function Brands() {
     setErr('')
   }
 
+  const [showNew, setShowNew] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newNotes, setNewNotes] = useState('')
+  const [newErr, setNewErr] = useState('')
+
+  const createBrand = useMutation({
+    mutationFn: async () => {
+      const name = newName.trim()
+      if (!name) throw new Error('Give the brand a name')
+      const key = name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+      const { error } = await supabase.from('brands').insert({ key, name, notes: newNotes.trim() || null })
+      if (error) throw error.code === '23505' ? new Error(`A brand with key "${key}" already exists`) : error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['brands'] })
+      setShowNew(false); setNewName(''); setNewNotes(''); setNewErr('')
+    },
+    onError: e => setNewErr(e instanceof Error ? e.message : 'Create failed'),
+  })
+
   return (
     <div className="max-w-3xl">
-      <h1 className="font-display text-3xl font-medium">Brands</h1>
-      <p className="mt-1 text-sm text-ink-soft">Brand constraints merge into briefs and DESIGN.md exports. Inspiration stays unconstrained; output respects the brand.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl font-medium">Brands</h1>
+          <p className="mt-1 text-sm text-ink-soft">Brand constraints merge into briefs and DESIGN.md exports. Inspiration stays unconstrained; output respects the brand.</p>
+        </div>
+        <button className="btn-primary shrink-0" onClick={() => setShowNew(v => !v)}>+ New brand</button>
+      </div>
+
+      {showNew && (
+        <div className="mt-5 rounded-xl border border-line bg-white p-4 shadow-card">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label-mono">Brand name</label>
+              <input className="field mt-1" value={newName} onChange={e => setNewName(e.target.value)} placeholder="RhinoGuard" autoFocus />
+            </div>
+            <div>
+              <label className="label-mono">Notes (optional)</label>
+              <input className="field mt-1" value={newNotes} onChange={e => setNewNotes(e.target.value)} placeholder="New product site, launching 2026" />
+            </div>
+          </div>
+          {newErr && <p className="mt-2 text-sm text-accent">{newErr}</p>}
+          <div className="mt-3 flex gap-2">
+            <button className="btn-primary" onClick={() => createBrand.mutate()} disabled={createBrand.isPending}>Create brand</button>
+            <button className="btn-ghost" onClick={() => setShowNew(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
 
       <div className="mt-6 space-y-3">
         {brands.map(b => (
