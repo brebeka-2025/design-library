@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { @apply bg-paper text-ink font-body antialiased; }
+  body { @apply min-h-screen; }
+  ::selection { @apply bg-accent-soft text-accent; }
+}
+
+@layer components {
+  .label-mono { @apply font-mono text-[11px] uppercase tracking-[0.08em] text-ink-soft; }
+  .btn { @apply inline-flex items-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed; }
+  .btn-primary { @apply btn bg-ink text-paper hover:bg-accent; }
+  .btn-ghost { @apply btn border border-line bg-white/40 hover:border-ink-faint; }
+  .field { @apply w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-accent; }
+  .chip { @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-white/60 px-3 py-1 font-mono text-[11px] uppercase tracking-wide text-ink-soft transition-colors hover:border-ink-faint cursor-pointer; }
+  .chip-active { @apply border-ink bg-ink text-paper hover:border-ink; }
+}
