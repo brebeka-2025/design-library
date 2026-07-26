@@ -59,12 +59,18 @@ app.post('/capture', requireUser, async (req, res) => {
   let browser;
   try {
     browser = await chromium.launch({ args: ['--no-sandbox', '--disable-dev-shm-usage'] });
-    const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1.5 });
-    await page.goto(url, { waitUntil: 'networkidle', timeout: 45000 }).catch(async () => {
-      // networkidle can hang on sites with long-polling; fall back to load
-      await page.goto(url, { waitUntil: 'load', timeout: 45000 });
+    const page = await browser.newPage({
+      viewport: { width: 1440, height: 900 },
+      deviceScaleFactor: 1.5,
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
     });
-    await page.waitForTimeout(1500); // settle animations/lazy images
+    // Resilient navigation: bot-protected/heavy sites often never reach full
+    // "load". Get the DOM, then opportunistically settle, then shoot what we have.
+    let navError = null;
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(e => { navError = e; });
+    if (page.url() === 'about:blank') throw navError ?? new Error('Navigation failed');
+    await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+    await page.waitForTimeout(2500); // settle animations/lazy images
     const title = await page.title();
     const png = await page.screenshot({ fullPage: true, type: 'png' });
     await browser.close();
