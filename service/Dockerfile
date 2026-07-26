@@ -1,6 +1,6 @@
 # Playwright base image ships Chromium + all OS deps.
 # IMPORTANT: base image tag must match the pinned playwright version in package.json.
-FROM mcr.microsoft.com/playwright:v1.62.0-jammy
+FROM mcr.microsoft.com/playwright:v1.61.1-noble
 
 WORKDIR /app
 COPY package.json package-lock.json ./
