@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { Item } from '../lib/types'
 import { useBrands, useDesignTypes, useFamilies, useUpdateItem } from '../hooks/useData'
+import { supabase } from '../lib/supabase'
 import { analyzeItem } from '../lib/api'
 import { buildDesignMd, downloadText } from '../lib/designmd'
 import ItemImage from './ItemImage'
@@ -64,6 +65,22 @@ export default function ItemDetail({ item, onClose }: { item: Item; onClose: () 
       if (extra?.status) onClose()
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Save failed')
+    }
+  }
+
+  async function discard() {
+    if (!window.confirm('Discard this item? The screenshot and draft are deleted permanently.')) return
+    setErr('')
+    try {
+      if (item.image_path) {
+        await supabase.storage.from('inspiration').remove([item.image_path])
+      }
+      const { error } = await supabase.from('items').delete().eq('id', item.id)
+      if (error) throw error
+      qc.invalidateQueries({ queryKey: ['items'] })
+      onClose()
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Discard failed')
     }
   }
 
@@ -207,9 +224,14 @@ export default function ItemDetail({ item, onClose }: { item: Item; onClose: () 
           <div className="mt-4 flex flex-wrap gap-2 pb-8">
             {dirty && <button className="btn-primary" onClick={() => save()} disabled={update.isPending}>Save changes</button>}
             {draft.status === 'pending_review' && (
-              <button className="btn-primary" onClick={() => save({ status: 'approved' })} disabled={update.isPending}>
-                Approve into library
-              </button>
+              <>
+                <button className="btn-primary" onClick={() => save({ status: 'approved' })} disabled={update.isPending}>
+                  Approve into library
+                </button>
+                <button className="btn-ghost text-accent" onClick={discard} disabled={update.isPending}>
+                  Discard
+                </button>
+              </>
             )}
             {draft.status === 'approved' && (
               <button className="btn-ghost" onClick={() => save({ status: 'archived' })} disabled={update.isPending}>Archive</button>
