@@ -276,7 +276,7 @@ export default function TheCrit() {
 
   // ================= start: pin something up =================
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-5xl">
       <h1 className="font-display text-3xl font-medium">The Crit</h1>
       <p className="mt-1 text-sm text-ink-soft">Pin the work up and the conversation starts — your design director reads it, asks what it's for, and you take it from there. Agreed rulings get captured to your style profile.</p>
 

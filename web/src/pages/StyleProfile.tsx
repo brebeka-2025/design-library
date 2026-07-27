@@ -44,7 +44,7 @@ export default function StyleProfile() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-5xl">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-medium">Style profile</h1>

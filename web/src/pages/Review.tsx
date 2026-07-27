@@ -9,7 +9,7 @@ export default function Review() {
   const [openItem, setOpenItem] = useState<Item | null>(null)
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-5xl">
       <h1 className="font-display text-3xl font-medium">Review queue</h1>
       <p className="mt-1 text-sm text-ink-soft">Drafts stay drafts until you approve them. Edit anything the analysis got wrong, then approve.</p>
 

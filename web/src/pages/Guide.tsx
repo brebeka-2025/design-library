@@ -46,7 +46,7 @@ function Arrow({ label }: { label?: string }) {
 
 export default function Guide() {
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-3xl">
       <h1 className="font-display text-3xl font-medium">How to use DesignOS</h1>
       <p className="mt-2 text-sm leading-relaxed text-ink-soft">
         Two tools, one system. <strong className="text-ink">This app is the memory</strong> — it collects your taste, your brand rules, and what critiques teach us. <strong className="text-ink">Claude Code is the workshop</strong> — it's where designs actually get built, on your Mac. The DESIGN.md file is the handoff between them: this app writes it, Claude Code reads it.
