@@ -21,10 +21,13 @@ Living list of planned updates, small fixes, and housekeeping. Started 2026-07-2
 - [ ] **Semantic search** — embeddings over analyses/keywords: "quiet minimal with serif" finds items no keyword matches.
 - [ ] **Chrome extension** — one "Save to my library" button in the browser: current tab → type picker → note → capture pipeline. Also serves the future bookmarks app. (~a day; queued behind proof of regular library use.)
 - [ ] Design-type manager UI — only if adding types becomes frequent; today a new type is a deliberate ask (each type carries a curated format profile).
+- [ ] **Multi-tenancy** — per-user libraries, brands, and style profiles (user_id columns + owner-scoped RLS) if DesignOS becomes a team tool. Today: single shared studio, second user added deliberately 2026-07-27 (Colby — full access, bills Bob's API key; asked to stay out of style-profile approvals)
+- [ ] **Real email delivery** — custom SMTP (e.g. Resend free tier) for signup/reset emails; Supabase built-in sender is dev-grade (~2/hr, unreliable). Until then: confirm users manually via SQL
 - [ ] Crit protocol toggle: presenter-first option (Bob presents before critic describes) if the hybrid rhythm doesn't stick after a few sessions.
 
 ## Housekeeping / operations
 
+- [ ] Disable new signups in Supabase (Auth → Sign In / Up) — app is a shared single studio; Bob + Colby accounts exist (2026-07-27); open signups = full access for anyone with the URL
 - [ ] Delete duplicate Supabase project `design-library-app` (utbiuzqjksywjwqnedpl) — costs $10/mo doing nothing
 - [ ] Supabase Auth → URL Configuration → set Site URL to the Vercel URL (auth emails currently redirect to localhost:3000)
 - [ ] Verify one successful URL capture on a normal (non-bot-walled) site — pipeline works, this is the final checkbox
