@@ -19,7 +19,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen">
       <aside className="fixed inset-y-0 left-0 flex w-56 flex-col border-r border-line bg-paper px-4 py-6">
         <div className="px-3">
-          <span className="font-display text-2xl font-medium">design library</span>
+          <span className="font-display text-2xl font-medium">Design<span className="text-accent">OS</span></span>
         </div>
         <nav className="mt-8 flex-1 space-y-1">
           <NavLink to="/" end className={link}>Library</NavLink>

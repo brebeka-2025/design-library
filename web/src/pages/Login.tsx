@@ -31,8 +31,8 @@ export default function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <h1 className="font-display text-4xl font-medium">design library</h1>
-        <p className="mt-2 text-sm text-ink-soft">Your taste, catalogued and put to work.</p>
+        <h1 className="font-display text-4xl font-medium">Design<span className="text-accent">OS</span></h1>
+        <p className="mt-2 text-sm text-ink-soft">The operating system for your design process.</p>
         <form onSubmit={submit} className="mt-8 space-y-3">
           <div>
             <label className="label-mono">Email</label>

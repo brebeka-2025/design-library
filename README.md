@@ -1,6 +1,6 @@
-# design-library
+# DesignOS
 
-Personal design inspiration library and taste engine. Curate inspiration across formats (websites, landing pages, emails, banners), extract structured style data with AI analysis, and generate format-aware, brand-aware briefs and DESIGN.md files for AI-driven design work.
+The operating system for Bob's design process — inspiration library, brand guidelines, studio critique, and a learning style profile. (Repo/infra retain the original working name design-library.) Curate inspiration across formats (websites, landing pages, emails, banners), extract structured style data with AI analysis, and generate format-aware, brand-aware briefs and DESIGN.md files for AI-driven design work.
 
 ## Architecture
 

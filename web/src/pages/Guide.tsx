@@ -29,7 +29,7 @@ function Step({ n, title, children }: { n: string; title: string; children: Reac
 export default function Guide() {
   return (
     <div className="max-w-2xl">
-      <h1 className="font-display text-3xl font-medium">How to use the designer</h1>
+      <h1 className="font-display text-3xl font-medium">How to use DesignOS</h1>
       <p className="mt-2 text-sm leading-relaxed text-ink-soft">
         Two tools, one system. <strong className="text-ink">This app is the memory</strong> — it collects your taste, your brand rules, and what critiques teach us. <strong className="text-ink">Claude Code is the workshop</strong> — it's where designs actually get built, on your Mac. The DESIGN.md file is the handoff between them: this app writes it, Claude Code reads it.
       </p>
