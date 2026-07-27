@@ -44,7 +44,7 @@ export default function StyleProfile() {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="mx-auto max-w-3xl">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-medium">Style profile</h1>
@@ -53,7 +53,7 @@ export default function StyleProfile() {
           </p>
         </div>
         {!editing && (
-          <button className="btn-secondary shrink-0" onClick={startEdit}>
+          <button className="btn-ghost shrink-0" onClick={startEdit}>
             {draft ? 'Edit draft' : current ? 'Propose update' : 'Start profile'}
           </button>
         )}

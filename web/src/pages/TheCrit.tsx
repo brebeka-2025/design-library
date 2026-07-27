@@ -216,7 +216,7 @@ export default function TheCrit() {
         <div className="flex w-1/2 flex-col">
           <div className="flex items-center justify-between border-b border-line pb-2">
             <span className="label-mono">In crit with your design director</span>
-            <button className="btn-secondary" onClick={capture} disabled={busy || messages.length < 3}>
+            <button className="btn-ghost" onClick={capture} disabled={busy || messages.length < 3}>
               Capture rulings
             </button>
           </div>
@@ -276,7 +276,7 @@ export default function TheCrit() {
 
   // ================= start: pin something up =================
   return (
-    <div className="max-w-3xl">
+    <div className="mx-auto max-w-3xl">
       <h1 className="font-display text-3xl font-medium">The Crit</h1>
       <p className="mt-1 text-sm text-ink-soft">Pin the work up and the conversation starts — your design director reads it, asks what it's for, and you take it from there. Agreed rulings get captured to your style profile.</p>
 

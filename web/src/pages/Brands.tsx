@@ -22,7 +22,7 @@ export default function Brands() {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="mx-auto max-w-3xl">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-medium">Brands</h1>
