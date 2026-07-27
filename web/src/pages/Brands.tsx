@@ -8,12 +8,16 @@ export default function Brands() {
   const brands = useBrands().data ?? []
   const [wizard, setWizard] = useState<{ open: boolean; brand: Brand | null }>({ open: false, brand: null })
 
+  function hasGuidelines(b: Brand): boolean {
+    return !!(b.tokens?.colors?.length || b.tokens?.typography?.display || b.voice_rules)
+  }
+
   function summarize(b: Brand): string {
     const parts: string[] = []
     if (b.tokens?.colors?.length) parts.push(`${b.tokens.colors.length} colors`)
     if (b.tokens?.typography?.display) parts.push(b.tokens.typography.display)
     if (b.voice_rules) parts.push('voice rules set')
-    return parts.length ? parts.join(' · ') : 'no guidelines yet — run the wizard'
+    return parts.join(' · ')
   }
 
   return (
@@ -23,7 +27,7 @@ export default function Brands() {
           <h1 className="font-display text-3xl font-medium">Brands</h1>
           <p className="mt-1 text-sm text-ink-soft">Brand constraints merge into briefs and DESIGN.md exports. Inspiration stays unconstrained; output respects the brand.</p>
         </div>
-        <button className="btn-primary shrink-0" onClick={() => setWizard({ open: true, brand: null })}>+ New brand</button>
+        <button className="btn-ghost shrink-0" onClick={() => setWizard({ open: true, brand: null })}>+ New brand</button>
       </div>
 
       <div className="mt-6 space-y-3">
@@ -41,13 +45,25 @@ export default function Brands() {
                     </span>
                   )}
                 </div>
-                <p className="truncate font-mono text-[11px] text-ink-faint">{b.key} — {summarize(b)}</p>
+                {hasGuidelines(b) ? (
+                  <p className="truncate font-mono text-[11px] text-ink-faint">{b.key} — {summarize(b)}</p>
+                ) : (
+                  <p className="truncate font-mono text-[11px] text-ink-soft">{b.key} — <span className="text-accent">guidelines not set</span></p>
+                )}
               </div>
               <div className="flex shrink-0 gap-2">
-                <button className="btn-ghost" onClick={() => downloadText(`DESIGN-${b.key}.md`, buildBrandDesignMd(b))}>
-                  Export DESIGN.md
-                </button>
-                <button className="btn-ghost" onClick={() => setWizard({ open: true, brand: b })}>Edit</button>
+                {hasGuidelines(b) ? (
+                  <>
+                    <button className="btn-secondary" onClick={() => downloadText(`DESIGN-${b.key}.md`, buildBrandDesignMd(b))}>
+                      Export DESIGN.md
+                    </button>
+                    <button className="btn-ghost" onClick={() => setWizard({ open: true, brand: b })}>Edit</button>
+                  </>
+                ) : (
+                  <button className="btn-secondary" onClick={() => setWizard({ open: true, brand: b })}>
+                    Set up guidelines →
+                  </button>
+                )}
               </div>
             </div>
           </div>

@@ -11,8 +11,13 @@
 @layer components {
   .label-mono { @apply font-mono text-[11px] uppercase tracking-[0.08em] text-ink-soft; }
   .btn { @apply inline-flex items-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed; }
+  /* Button hierarchy: one accent primary per app (Add inspiration), ink for
+     view-level commits (Save/Approve), gray fill for the lead card action,
+     ghost for everything secondary. */
+  .btn-accent { @apply btn bg-accent text-paper hover:bg-ink; }
   .btn-primary { @apply btn bg-ink text-paper hover:bg-accent; }
-  .btn-ghost { @apply btn border border-line bg-white/40 hover:border-ink-faint; }
+  .btn-secondary { @apply btn bg-paper-deep text-ink hover:bg-line; }
+  .btn-ghost { @apply btn border border-line bg-white/40 text-ink-soft hover:border-ink-faint hover:text-ink; }
   .field { @apply w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-accent; }
   .chip { @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-white/60 px-3 py-1 font-mono text-[11px] uppercase tracking-wide text-ink-soft transition-colors hover:border-ink-faint cursor-pointer; }
   .chip-active { @apply border-ink bg-ink text-paper hover:border-ink; }

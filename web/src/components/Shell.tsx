@@ -9,7 +9,11 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const pending = useItems('pending_review').data?.length ?? 0
 
   const link = ({ isActive }: { isActive: boolean }) =>
-    `block rounded-md px-3 py-2 text-sm transition-colors ${isActive ? 'bg-ink text-paper' : 'text-ink-soft hover:bg-paper-deep'}`
+    `relative block rounded-md px-3 py-2 text-sm transition-colors ${
+      isActive
+        ? 'bg-paper-deep font-semibold text-ink before:absolute before:left-0 before:top-2 before:bottom-2 before:w-0.5 before:rounded-full before:bg-accent'
+        : 'text-ink-soft hover:bg-paper-deep/60'
+    }`
 
   return (
     <div className="flex min-h-screen">
@@ -27,7 +31,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           </NavLink>
           <NavLink to="/brands" className={link}>Brands</NavLink>
         </nav>
-        <button className="btn-primary w-full justify-center" onClick={() => setIngestOpen(true)}>
+        <button className="btn-accent w-full justify-center" onClick={() => setIngestOpen(true)}>
           + Add inspiration
         </button>
         <button
