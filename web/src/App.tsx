@@ -8,6 +8,7 @@ import Library from './pages/Library'
 import Review from './pages/Review'
 import Brands from './pages/Brands'
 import StyleProfile from './pages/StyleProfile'
+import Guide from './pages/Guide'
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null)
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/review" element={<Review />} />
         <Route path="/brands" element={<Brands />} />
         <Route path="/profile" element={<StyleProfile />} />
+        <Route path="/guide" element={<Guide />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Shell>
