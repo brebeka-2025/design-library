@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase, signedUrl } from '../lib/supabase'
-import { critSend, critCapture } from '../lib/api'
+import { critSend, critCapture, type CritRuling } from '../lib/api'
 import { useBrands, useItems } from '../hooks/useData'
 import ItemImage from '../components/ItemImage'
 import Md from '../components/Md'
@@ -80,9 +80,9 @@ export default function TheCrit() {
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
-  const [captured, setCaptured] = useState<string[] | null>(null)
+  const [captured, setCaptured] = useState<CritRuling[] | null>(null)
   const [imgUrl, setImgUrl] = useState<string | null>(null)
-  const [showPrinciples, setShowPrinciples] = useState(false)
+  const [topic, setTopic] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -134,14 +134,15 @@ export default function TheCrit() {
     if (!input.trim() || !activeId) return
     setErr('')
     setBusy(true)
-    const text = input
+    const text = topic ? `## ${topic}\n${input}` : input
     setInput('')
+    setTopic(null)
     try {
       await critSend({ session_id: activeId, message: text })
       qc.invalidateQueries({ queryKey: ['crit_messages', activeId] })
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Send failed')
-      setInput(text)
+      setInput(input)
     } finally {
       setBusy(false)
     }
@@ -176,20 +177,6 @@ export default function TheCrit() {
               ? <img src={imgUrl} alt={active.title} className="w-full" />
               : <div className="h-full animate-pulse bg-paper-deep" />}
           </div>
-          <div className="mt-3">
-            <button className="label-mono w-full text-left hover:text-ink" onClick={() => setShowPrinciples(v => !v)}>
-              {showPrinciples ? '▾' : '▸'} The 14 principles — on the wall
-            </button>
-            {showPrinciples && (
-              <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-line bg-white/60 p-3">
-                {PRINCIPLES.map(([name, line]) => (
-                  <p key={name} className="py-0.5 text-[12px] leading-snug text-ink-soft">
-                    <span className="font-medium text-ink">{name}.</span> {line}
-                  </p>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
 
         {/* the conversation */}
@@ -204,9 +191,9 @@ export default function TheCrit() {
             {messages.filter(m => m.content !== OPENING).map(m => (
               <div key={m.id} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
                 <div className={`max-w-[90%] rounded-xl px-4 py-3 ${
-                  m.role === 'user' ? 'whitespace-pre-wrap bg-ink text-sm leading-relaxed text-paper' : 'border border-line bg-white shadow-card'
+                  m.role === 'user' ? 'on-ink bg-ink text-paper' : 'border border-line bg-white shadow-card'
                 }`}>
-                  {m.role === 'assistant' ? <Md>{m.content}</Md> : m.content}
+                  <Md>{m.content}</Md>
                 </div>
               </div>
             ))}
@@ -215,7 +202,7 @@ export default function TheCrit() {
               <div className="rounded-xl border border-accent/40 bg-accent-soft/30 p-4 text-sm">
                 <p className="label-mono text-accent">Rulings captured to a profile draft</p>
                 <ul className="mt-2 list-disc space-y-1 pl-5">
-                  {captured.map((r, i) => <li key={i}>{r}</li>)}
+                  {captured.map((r, i) => <li key={i}><strong>{r.principle}:</strong> {r.ruling}</li>)}
                 </ul>
                 <Link to="/profile" className="mt-3 inline-block font-medium text-accent hover:underline">Review and approve on the Style profile page →</Link>
               </div>
@@ -223,10 +210,32 @@ export default function TheCrit() {
             <div ref={bottomRef} />
           </div>
           {err && <p className="pb-2 text-sm text-accent">{err}</p>}
-          <form onSubmit={send} className="flex gap-2 border-t border-line pt-3">
-            <input className="field" placeholder="Talk to the room…" value={input} onChange={e => setInput(e.target.value)} disabled={busy} autoFocus />
-            <button className="btn-primary shrink-0" disabled={busy || !input.trim()}>Send</button>
-          </form>
+          <div className="border-t border-line pt-2">
+            <div className="flex flex-wrap gap-1.5 pb-2">
+              {PRINCIPLES.map(([name, line]) => (
+                <button
+                  key={name}
+                  type="button"
+                  title={line}
+                  className={`chip !px-2.5 !py-0.5 ${topic === name ? 'chip-active' : ''}`}
+                  onClick={() => setTopic(t => (t === name ? null : name))}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+            <form onSubmit={send} className="flex gap-2">
+              <input
+                className="field"
+                placeholder={topic ? `Your read on ${topic}…` : 'Talk to the room, or pick a principle above…'}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                disabled={busy}
+                autoFocus
+              />
+              <button className="btn-primary shrink-0" disabled={busy || !input.trim()}>Send</button>
+            </form>
+          </div>
         </div>
       </div>
     )

@@ -37,4 +37,8 @@
   .md-body code { @apply rounded bg-paper-deep px-1 py-0.5 font-mono text-[12px]; }
   .md-body hr { @apply my-3 border-line; }
   .md-body a { @apply text-accent hover:underline; }
+  /* markdown on dark (ink) bubbles */
+  .on-ink .md-body code { @apply bg-white/15 text-paper; }
+  .on-ink .md-body blockquote { @apply border-paper/40 text-paper/80; }
+  .on-ink .md-body a { @apply text-accent-soft; }
 }

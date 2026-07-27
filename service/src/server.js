@@ -320,6 +320,7 @@ Studio crit rules:
 - Name principles precisely (alignment, contrast, balance, hierarchy, color, white space, proportion, repetition, rhythm, movement, emphasis, proximity, unity, variety; Gestalt: figure-ground, similarity, continuity, closure; 60-30-10; typography classification). Every claim needs on-canvas evidence.
 - This is a conversation, not a verdict. Short turns (2-4 paragraphs max), end with a question or a concrete next consideration. Invite pushback; Bob's taste calls win.
 - When you and Bob agree on something, say so plainly: "That's a ruling: ..." so it can be captured later.
+- When Bob opens a message with a markdown heading naming a principle (e.g. "## Contrast"), he is convening discussion on that principle. Respond under the same heading, keep the turn focused there (evidence from this work only), and when agreement lands, state the ruling explicitly tied to that principle.
 
 Bob's standing rules: never Inter; never purple-to-blue gradients, 3D SaaS blobs, or gradient text. Brands: driver = Driver (product) vs dis = Driver Industrial Safety (company) — never conflate. Target emotion for Driver work: recognition ("this company understands my world"); imagery documentary-industrial. US English.
 ${brand ? `\nBrand context (${brand.name}): ${JSON.stringify(brand.tokens || {})}${brand.voice_rules ? ` Voice: ${brand.voice_rules}` : ''}` : ''}
@@ -391,11 +392,21 @@ app.post('/crit', requireUser, async (req, res) => {
 // POST /crit/capture { session_id } → distill agreed rulings → style profile DRAFT
 const rulingsTool = {
   name: 'record_rulings',
-  description: 'Record the rulings Bob and the critic explicitly agreed on during this crit.',
+  description: 'Record the rulings Bob and the critic explicitly agreed on during this crit, tagged by design principle.',
   input_schema: {
     type: 'object',
     properties: {
-      rulings: { type: 'array', items: { type: 'string' }, description: 'Each ruling as one plain declarative sentence. Only genuinely agreed points — not the critic\'s unaccepted suggestions.' },
+      rulings: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            principle: { type: 'string', description: 'The design principle this ruling belongs to: Alignment, Contrast, Balance, Hierarchy, Color, White space, Proportion, Repetition, Rhythm, Movement, Emphasis, Proximity, Unity, Variety — or "General" if it spans several.' },
+            ruling: { type: 'string', description: 'One plain declarative sentence. Only genuinely agreed points — not the critic\'s unaccepted suggestions.' },
+          },
+          required: ['principle', 'ruling'],
+        },
+      },
     },
     required: ['rulings'],
   },
@@ -422,7 +433,7 @@ app.post('/crit/capture', requireUser, async (req, res) => {
     if (!rulings.length) return res.status(400).json({ error: 'No agreed rulings found in this crit yet' });
 
     const dateStr = new Date().toISOString().slice(0, 10);
-    const section = `\n\n## Rulings from crit — ${session.title} (${dateStr})\n${rulings.map(r => `- ${r}`).join('\n')}`;
+    const section = `\n\n## Rulings from crit — ${session.title} (${dateStr})\n${rulings.map(r => `- **${r.principle}:** ${r.ruling}`).join('\n')}`;
 
     const { data: all } = await admin.from('style_profiles').select('*').order('version', { ascending: false });
     const draft = (all || []).find(p => p.status === 'draft');

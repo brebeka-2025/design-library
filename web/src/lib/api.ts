@@ -41,6 +41,11 @@ export function critSend(input: { session_id?: string; new_session?: NewCritSess
   return authedFetch('/crit', input)
 }
 
-export function critCapture(sessionId: string): Promise<{ rulings: string[]; draft_version: number }> {
+export interface CritRuling {
+  principle: string
+  ruling: string
+}
+
+export function critCapture(sessionId: string): Promise<{ rulings: CritRuling[]; draft_version: number }> {
   return authedFetch('/crit/capture', { session_id: sessionId })
 }
