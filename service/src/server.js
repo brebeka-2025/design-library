@@ -307,4 +307,137 @@ app.post('/analyze', requireUser, async (req, res) => {
   }
 });
 
+// ============ The Crit: collaborative studio critique ============
+
+function critSystemPrompt({ profile, brand, intent, title }) {
+  return `You are a senior graphic designer with 20 years across editorial, brand, and digital work, running a design-school style studio crit with Bob (a marketing manager who took art/architecture/design classes and values real crits). The work under review: "${title}". ${intent ? `Stated intent: ${intent}` : 'Intent not yet stated — ask for it first.'}
+
+Studio crit rules:
+- Questions before judgments. Anchor on intent: audience, single message, desired action.
+- Read the work aloud: describe what you see and the order the eye travels it, before evaluating.
+- Name principles precisely (alignment, contrast, balance, hierarchy, color, white space, proportion, repetition, rhythm, movement, emphasis, proximity, unity, variety; Gestalt: figure-ground, similarity, continuity, closure; 60-30-10; typography classification). Every claim needs on-canvas evidence.
+- This is a conversation, not a verdict. Short turns (2-4 paragraphs max), end with a question or a concrete next consideration. Invite pushback; Bob's taste calls win.
+- When you and Bob agree on something, say so plainly: "That's a ruling: ..." so it can be captured later.
+
+Bob's standing rules: never Inter; never purple-to-blue gradients, 3D SaaS blobs, or gradient text. Brands: driver = Driver (product) vs dis = Driver Industrial Safety (company) — never conflate. Target emotion for Driver work: recognition ("this company understands my world"); imagery documentary-industrial. US English.
+${brand ? `\nBrand context (${brand.name}): ${JSON.stringify(brand.tokens || {})}${brand.voice_rules ? ` Voice: ${brand.voice_rules}` : ''}` : ''}
+${profile ? `\nBob's learned style profile (v${profile.version}) — critique against these agreed rulings:\n${profile.content}` : '\nNo style profile yet — this crit may produce its first rulings.'}`;
+}
+
+// POST /crit { session_id?, new_session?: {title,image_path,item_id,brand_id,intent}, message }
+app.post('/crit', requireUser, async (req, res) => {
+  const { session_id, new_session, message } = req.body || {};
+  if (!message?.trim()) return res.status(400).json({ error: 'Provide a message' });
+  try {
+    let session;
+    if (session_id) {
+      const { data, error } = await admin.from('crit_sessions').select('*').eq('id', session_id).single();
+      if (error || !data) return res.status(404).json({ error: 'Session not found' });
+      session = data;
+    } else if (new_session?.image_path && new_session?.title) {
+      const { data, error } = await admin.from('crit_sessions').insert({
+        title: new_session.title,
+        image_path: new_session.image_path,
+        item_id: new_session.item_id || null,
+        brand_id: new_session.brand_id || null,
+        intent: new_session.intent || null,
+      }).select('*').single();
+      if (error) throw error;
+      session = data;
+    } else {
+      return res.status(400).json({ error: 'Provide session_id or new_session {title, image_path}' });
+    }
+
+    await admin.from('crit_messages').insert({ session_id: session.id, role: 'user', content: message });
+
+    const [{ data: history }, { data: img, error: dlErr }, { data: profiles }, brandRow] = await Promise.all([
+      admin.from('crit_messages').select('role,content').eq('session_id', session.id).order('created_at'),
+      admin.storage.from('inspiration').download(session.image_path),
+      admin.from('style_profiles').select('version,content').eq('status', 'approved').order('version', { ascending: false }).limit(1),
+      session.brand_id ? admin.from('brands').select('name,tokens,voice_rules').eq('id', session.brand_id).single() : Promise.resolve({ data: null }),
+    ]);
+    if (dlErr) throw new Error(`Image download failed: ${dlErr.message}`);
+    const buf = Buffer.from(await img.arrayBuffer());
+    if (buf.length > 4.5 * 1024 * 1024) return res.status(400).json({ error: 'Image too large for crit (>4.5MB)' });
+
+    const apiMessages = (history || []).map((m, i) => ({
+      role: m.role,
+      content: i === 0 && m.role === 'user'
+        ? [
+            { type: 'image', source: { type: 'base64', media_type: 'image/png', data: buf.toString('base64') } },
+            { type: 'text', text: m.content },
+          ]
+        : m.content,
+    }));
+
+    const msg = await anthropic.messages.create({
+      model: ANTHROPIC_MODEL,
+      max_tokens: 1500,
+      system: critSystemPrompt({ profile: profiles?.[0] || null, brand: brandRow.data, intent: session.intent, title: session.title }),
+      messages: apiMessages,
+    });
+    const reply = msg.content.filter(c => c.type === 'text').map(c => c.text).join('\n');
+    await admin.from('crit_messages').insert({ session_id: session.id, role: 'assistant', content: reply });
+
+    res.json({ session_id: session.id, reply });
+  } catch (err) {
+    console.error('crit error:', err.message);
+    res.status(500).json({ error: `Crit failed: ${err.message}` });
+  }
+});
+
+// POST /crit/capture { session_id } → distill agreed rulings → style profile DRAFT
+const rulingsTool = {
+  name: 'record_rulings',
+  description: 'Record the rulings Bob and the critic explicitly agreed on during this crit.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      rulings: { type: 'array', items: { type: 'string' }, description: 'Each ruling as one plain declarative sentence. Only genuinely agreed points — not the critic\'s unaccepted suggestions.' },
+    },
+    required: ['rulings'],
+  },
+};
+
+app.post('/crit/capture', requireUser, async (req, res) => {
+  const { session_id } = req.body || {};
+  if (!session_id) return res.status(400).json({ error: 'Provide session_id' });
+  try {
+    const { data: session } = await admin.from('crit_sessions').select('*').eq('id', session_id).single();
+    if (!session) return res.status(404).json({ error: 'Session not found' });
+    const { data: history } = await admin.from('crit_messages').select('role,content').eq('session_id', session_id).order('created_at');
+    if (!history?.length) return res.status(400).json({ error: 'Nothing to capture yet' });
+
+    const transcript = history.map(m => `${m.role === 'user' ? 'BOB' : 'CRITIC'}: ${m.content}`).join('\n\n');
+    const msg = await anthropic.messages.create({
+      model: ANTHROPIC_MODEL,
+      max_tokens: 1000,
+      tools: [rulingsTool],
+      tool_choice: { type: 'tool', name: 'record_rulings' },
+      messages: [{ role: 'user', content: `Distill this studio-crit transcript into the rulings both parties explicitly agreed on. Bob's agreement (or his own assertion) is required — do not include critic suggestions Bob didn't accept. Concise declarative sentences.\n\n${transcript}` }],
+    });
+    const rulings = msg.content.find(c => c.type === 'tool_use')?.input?.rulings || [];
+    if (!rulings.length) return res.status(400).json({ error: 'No agreed rulings found in this crit yet' });
+
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const section = `\n\n## Rulings from crit — ${session.title} (${dateStr})\n${rulings.map(r => `- ${r}`).join('\n')}`;
+
+    const { data: all } = await admin.from('style_profiles').select('*').order('version', { ascending: false });
+    const draft = (all || []).find(p => p.status === 'draft');
+    const current = (all || []).find(p => p.status === 'approved');
+    if (draft) {
+      await admin.from('style_profiles').update({ content: draft.content + section }).eq('id', draft.id);
+      res.json({ rulings, draft_version: draft.version });
+    } else {
+      const version = ((all?.[0]?.version) || 0) + 1;
+      const base = current?.content || `# Bob's style profile`;
+      await admin.from('style_profiles').insert({ version, content: base + section, status: 'draft' });
+      res.json({ rulings, draft_version: version });
+    }
+  } catch (err) {
+    console.error('crit capture error:', err.message);
+    res.status(500).json({ error: `Capture failed: ${err.message}` });
+  }
+});
+
 app.listen(PORT, () => console.log(`design-library service on :${PORT}`));

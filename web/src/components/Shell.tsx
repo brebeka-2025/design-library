@@ -30,6 +30,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             )}
           </NavLink>
           <NavLink to="/brands" className={link}>Brands</NavLink>
+          <NavLink to="/crit" className={link}>The Crit</NavLink>
           <NavLink to="/profile" className={link}>Style profile</NavLink>
           <NavLink to="/guide" className={link}>How to use</NavLink>
         </nav>

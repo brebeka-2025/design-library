@@ -28,3 +28,19 @@ export function analyzeItem(itemId: string): Promise<{ item: unknown }> {
 export function analyzeBrand(input: { url?: string; image_path?: string }): Promise<{ draft: Record<string, unknown> }> {
   return authedFetch('/analyze-brand', input)
 }
+
+export interface NewCritSession {
+  title: string
+  image_path: string
+  item_id?: string | null
+  brand_id?: string | null
+  intent?: string | null
+}
+
+export function critSend(input: { session_id?: string; new_session?: NewCritSession; message: string }): Promise<{ session_id: string; reply: string }> {
+  return authedFetch('/crit', input)
+}
+
+export function critCapture(sessionId: string): Promise<{ rulings: string[]; draft_version: number }> {
+  return authedFetch('/crit/capture', { session_id: sessionId })
+}

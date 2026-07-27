@@ -26,6 +26,24 @@ function Step({ n, title, children }: { n: string; title: string; children: Reac
   )
 }
 
+function Node({ label, sub, accent = false }: { label: string; sub: string; accent?: boolean }) {
+  return (
+    <div className={`rounded-lg border px-4 py-2.5 text-center ${accent ? 'border-accent bg-accent-soft/40' : 'border-line bg-white shadow-card'}`}>
+      <p className="font-display text-[15px] font-medium leading-tight">{label}</p>
+      <p className="mt-0.5 font-mono text-[10px] uppercase tracking-wide text-ink-soft">{sub}</p>
+    </div>
+  )
+}
+
+function Arrow({ label }: { label?: string }) {
+  return (
+    <div className="flex flex-col items-center py-0.5">
+      {label && <span className="font-mono text-[10px] text-ink-faint">{label}</span>}
+      <span className="text-ink-faint">↓</span>
+    </div>
+  )
+}
+
 export default function Guide() {
   return (
     <div className="max-w-2xl">
@@ -33,6 +51,28 @@ export default function Guide() {
       <p className="mt-2 text-sm leading-relaxed text-ink-soft">
         Two tools, one system. <strong className="text-ink">This app is the memory</strong> — it collects your taste, your brand rules, and what critiques teach us. <strong className="text-ink">Claude Code is the workshop</strong> — it's where designs actually get built, on your Mac. The DESIGN.md file is the handoff between them: this app writes it, Claude Code reads it.
       </p>
+
+      <h2 className="mt-10 font-display text-xl font-medium">The system at 30,000 feet</h2>
+      <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+        The methodology is a loop, not a pipeline. Taste goes in, designs come out, and what we learn from each design goes back in — so every project starts smarter than the last. AI does ~90% of the execution; you hold the two gates that matter: <strong className="text-ink">what enters the memory</strong> (approvals) and <strong className="text-ink">what counts as learned</strong> (profile rulings).
+      </p>
+
+      <div className="mx-auto mt-6 max-w-sm">
+        <Node label="Collect" sub="save inspiration · URL or image" />
+        <Arrow label="AI drafts the analysis" />
+        <Node label="Approve" sub="review queue · your gate №1" />
+        <Arrow label="joined by brand guidelines + learned taste" />
+        <Node label="Export DESIGN.md" sub="inspiration × brand × style profile" accent />
+        <Arrow label="handoff to the workshop" />
+        <Node label="Build" sub="Claude Code · Impeccable · Higgsfield" />
+        <Arrow label="pin the result up" />
+        <Node label="The Crit" sub="studio critique · together" />
+        <Arrow label="capture agreed rulings" />
+        <Node label="Style profile" sub="approve draft · your gate №2" accent />
+        <div className="mt-2 rounded-lg border border-dashed border-accent/50 px-4 py-2 text-center">
+          <p className="font-mono text-[10px] uppercase tracking-wide text-accent">↺ feeds every future DESIGN.md — the loop closes</p>
+        </div>
+      </div>
 
       <h2 className="mt-10 font-display text-xl font-medium">Every week: feed the memory (this app)</h2>
       <div className="mt-4">
