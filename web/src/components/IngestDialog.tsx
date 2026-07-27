@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { captureUrl, analyzeItem } from '../lib/api'
+import { prepareImage, imageFromPaste } from '../lib/image'
 import { useBrands, useDesignTypes, useInsertItem } from '../hooks/useData'
 
 type Step = 'form' | 'capturing' | 'analyzing' | 'done' | 'error'
@@ -23,6 +24,20 @@ export default function IngestDialog({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState<Step>('form')
   const [error, setError] = useState('')
 
+  // paste a screenshot straight from the clipboard (Cmd+Ctrl+Shift+4 on Mac)
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      const pasted = imageFromPaste(e)
+      if (pasted) {
+        e.preventDefault()
+        setTab('image')
+        setFile(pasted)
+      }
+    }
+    window.addEventListener('paste', onPaste)
+    return () => window.removeEventListener('paste', onPaste)
+  }, [])
+
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
@@ -39,11 +54,11 @@ export default function IngestDialog({ onClose }: { onClose: () => void }) {
         sourceUrl = cap.source_url
         if (!resolvedTitle) resolvedTitle = cap.title
       } else {
-        if (!file) throw new Error('Choose an image file')
+        if (!file) throw new Error('Choose or paste an image')
         setStep('capturing')
-        const ext = (file.name.split('.').pop() || 'png').toLowerCase()
+        const { blob, ext, contentType } = await prepareImage(file)
         const path = `uploads/${new Date().toISOString().slice(0, 10)}-${crypto.randomUUID()}.${ext}`
-        const { error: upErr } = await supabase.storage.from('inspiration').upload(path, file, { contentType: file.type || 'image/png' })
+        const { error: upErr } = await supabase.storage.from('inspiration').upload(path, blob, { contentType })
         if (upErr) throw upErr
         imagePath = path
       }
@@ -92,8 +107,9 @@ export default function IngestDialog({ onClose }: { onClose: () => void }) {
             </div>
           ) : (
             <div>
-              <label className="label-mono">Screenshot / image</label>
+              <label className="label-mono">Screenshot / image — or just paste from clipboard (⌘V)</label>
               <input className="field mt-1" type="file" accept="image/png,image/jpeg,image/webp" onChange={e => setFile(e.target.files?.[0] ?? null)} />
+              {file && <p className="mt-1 font-mono text-[11px] text-accent">✓ {file.name || 'pasted screenshot'} ready — oversized images resize automatically</p>}
             </div>
           )}
 

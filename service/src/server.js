@@ -50,6 +50,13 @@ async function requireUser(req, res, next) {
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
+// media type from storage path extension (uploads may be jpg/webp, captures are png)
+function mediaTypeFor(path) {
+  const ext = (path.split('.').pop() || '').toLowerCase();
+  return { jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' }[ext] || 'image/png';
+}
+
+
 // ---- shared: resilient full-page screenshot ----
 async function capturePage(url) {
   const browser = await chromium.launch({ args: ['--no-sandbox', '--disable-dev-shm-usage'] });
@@ -174,7 +181,7 @@ app.post('/analyze-brand', requireUser, async (req, res) => {
       messages: [{
         role: 'user',
         content: [
-          { type: 'image', source: { type: 'base64', media_type: 'image/png', data: buf.toString('base64') } },
+          { type: 'image', source: { type: 'base64', media_type: url ? 'image/png' : mediaTypeFor(image_path), data: buf.toString('base64') } },
           { type: 'text', text: 'You are a senior brand designer reverse-engineering brand guidelines from this material. Extract precise, defensible values: sample real hexes, name each color\'s usage rule as observed (e.g. accent only on CTAs), classify the typefaces, describe layout, imagery, and motion character, and infer tone-of-voice rules from any visible copy. Where the material gives no evidence, leave the field brief and hedged rather than inventing. Record with the record_brand_guidelines tool.' },
         ],
       }],
@@ -265,7 +272,7 @@ app.post('/analyze', requireUser, async (req, res) => {
       messages: [{
         role: 'user',
         content: [
-          { type: 'image', source: { type: 'base64', media_type: 'image/png', data: buf.toString('base64') } },
+          { type: 'image', source: { type: 'base64', media_type: mediaTypeFor(item.image_path), data: buf.toString('base64') } },
           { type: 'text', text: analysisPrompt(families || [], item.design_types?.name, item.bob_note) },
         ],
       }],
@@ -367,7 +374,7 @@ app.post('/crit', requireUser, async (req, res) => {
       role: m.role,
       content: i === 0 && m.role === 'user'
         ? [
-            { type: 'image', source: { type: 'base64', media_type: 'image/png', data: buf.toString('base64') } },
+            { type: 'image', source: { type: 'base64', media_type: mediaTypeFor(session.image_path), data: buf.toString('base64') } },
             { type: 'text', text: m.content },
           ]
         : m.content,

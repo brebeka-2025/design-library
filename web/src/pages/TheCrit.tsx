@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase, signedUrl } from '../lib/supabase'
 import { critSend, critCapture, type CritRuling } from '../lib/api'
+import { prepareImage, imageFromPaste } from '../lib/image'
 import { useBrands, useItems } from '../hooks/useData'
 import ItemImage from '../components/ItemImage'
 import Md from '../components/Md'
@@ -118,16 +119,31 @@ export default function TheCrit() {
     setErr('')
     setStarting(true)
     try {
-      const ext = (file.name.split('.').pop() || 'png').toLowerCase()
+      const { blob, ext, contentType } = await prepareImage(file)
       const path = `crits/${new Date().toISOString().slice(0, 10)}-${crypto.randomUUID()}.${ext}`
-      const { error } = await supabase.storage.from('inspiration').upload(path, file, { contentType: file.type || 'image/png' })
+      const { error } = await supabase.storage.from('inspiration').upload(path, blob, { contentType })
       if (error) throw error
-      await pinUp(path, file.name.replace(/\.[^.]+$/, ''))
+      await pinUp(path, file.name?.replace(/\.[^.]+$/, '') || `Pasted work — ${new Date().toLocaleDateString()}`)
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Upload failed')
       setStarting(false)
     }
   }
+
+  // paste a screenshot straight from the clipboard on the start screen
+  useEffect(() => {
+    if (activeId) return
+    function onPaste(e: ClipboardEvent) {
+      const pasted = imageFromPaste(e)
+      if (pasted) {
+        e.preventDefault()
+        onFile(pasted)
+      }
+    }
+    window.addEventListener('paste', onPaste)
+    return () => window.removeEventListener('paste', onPaste)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId, brandId])
 
   async function send(e: React.FormEvent) {
     e.preventDefault()
@@ -271,7 +287,7 @@ export default function TheCrit() {
         onDrop={e => { e.preventDefault(); onFile(e.dataTransfer.files?.[0] ?? null) }}
       >
         <p className="font-display text-xl">{starting ? 'Pinning it up…' : 'Drop a design here'}</p>
-        <p className="mt-1 text-sm text-ink-faint">or click to choose — a screenshot, a draft, a variant you're unsure about</p>
+        <p className="mt-1 text-sm text-ink-faint">or paste a screenshot (⌘V), or click to choose — oversized images resize automatically</p>
         <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={e => onFile(e.target.files?.[0] ?? null)} />
       </div>
 
