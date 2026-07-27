@@ -87,8 +87,9 @@ export default function BrandWizard({ brand, onClose }: Props) {
   const ly = t.layout ?? {}
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 p-4" onClick={onClose}>
-      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-xl bg-paper shadow-panel" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-ink/30 p-4 pt-[7vh]" onClick={onClose}>
+      {/* fixed height + top anchor: the frame never moves or resizes between steps */}
+      <div className="flex h-[82vh] w-full max-w-2xl flex-col rounded-xl bg-paper shadow-panel" onClick={e => e.stopPropagation()}>
         <div className="border-b border-line px-6 py-4">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-2xl font-medium">{brand ? `Edit ${brand.name}` : 'New brand'}</h2>
