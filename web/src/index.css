@@ -21,4 +21,20 @@
   .field { @apply w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-accent; }
   .chip { @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-white/60 px-3 py-1 font-mono text-[11px] uppercase tracking-wide text-ink-soft transition-colors hover:border-ink-faint cursor-pointer; }
   .chip-active { @apply border-ink bg-ink text-paper hover:border-ink; }
+
+  /* Rendered markdown (stored content stays raw markdown) */
+  .md-body { @apply text-sm leading-relaxed; }
+  .md-body p { @apply mb-2 last:mb-0; }
+  .md-body strong { @apply font-semibold; }
+  .md-body em { @apply italic; }
+  .md-body h1, .md-body h2, .md-body h3 { @apply font-display font-medium mt-3 mb-1.5 first:mt-0; }
+  .md-body h1 { @apply text-xl; }
+  .md-body h2 { @apply text-lg; }
+  .md-body h3 { @apply text-base; }
+  .md-body ul { @apply mb-2 list-disc pl-5 space-y-1; }
+  .md-body ol { @apply mb-2 list-decimal pl-5 space-y-1; }
+  .md-body blockquote { @apply border-l-2 border-accent/50 pl-3 text-ink-soft; }
+  .md-body code { @apply rounded bg-paper-deep px-1 py-0.5 font-mono text-[12px]; }
+  .md-body hr { @apply my-3 border-line; }
+  .md-body a { @apply text-accent hover:underline; }
 }

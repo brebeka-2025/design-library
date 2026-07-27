@@ -5,6 +5,7 @@ import { supabase, signedUrl } from '../lib/supabase'
 import { critSend, critCapture } from '../lib/api'
 import { useBrands, useItems } from '../hooks/useData'
 import ItemImage from '../components/ItemImage'
+import Md from '../components/Md'
 
 interface CritSession {
   id: string
@@ -202,9 +203,11 @@ export default function TheCrit() {
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto py-4">
             {messages.filter(m => m.content !== OPENING).map(m => (
               <div key={m.id} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
-                <div className={`max-w-[90%] whitespace-pre-wrap rounded-xl px-4 py-3 text-sm leading-relaxed ${
-                  m.role === 'user' ? 'bg-ink text-paper' : 'border border-line bg-white shadow-card'
-                }`}>{m.content}</div>
+                <div className={`max-w-[90%] rounded-xl px-4 py-3 ${
+                  m.role === 'user' ? 'whitespace-pre-wrap bg-ink text-sm leading-relaxed text-paper' : 'border border-line bg-white shadow-card'
+                }`}>
+                  {m.role === 'assistant' ? <Md>{m.content}</Md> : m.content}
+                </div>
               </div>
             ))}
             {(busy || starting) && <p className="font-mono text-[11px] uppercase tracking-wide text-ink-faint">looking at the work…</p>}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useProfiles, useSaveProfileDraft, useApproveProfile, useDiscardProfileDraft } from '../hooks/useData'
+import Md from '../components/Md'
 
 const STARTER = `# Bob's style profile — v1
 
@@ -86,14 +87,14 @@ export default function StyleProfile() {
                   <button className="btn-ghost" onClick={() => discard.mutate(draft.id)} disabled={discard.isPending}>Discard</button>
                 </div>
               </div>
-              <pre className="mt-3 whitespace-pre-wrap font-mono text-[13px] leading-relaxed text-ink">{draft.content}</pre>
+              <Md className="mt-3">{draft.content}</Md>
             </div>
           )}
 
           {current ? (
             <div className="mt-6 rounded-xl border border-line bg-white p-5 shadow-card">
               <p className="label-mono">Current — v{current.version} · approved {new Date(current.created_at).toLocaleDateString()}</p>
-              <pre className="mt-3 whitespace-pre-wrap font-mono text-[13px] leading-relaxed text-ink">{current.content}</pre>
+              <Md className="mt-3">{current.content}</Md>
             </div>
           ) : !draft && (
             <div className="mt-16 text-center">
@@ -111,7 +112,7 @@ export default function StyleProfile() {
                     <summary className="cursor-pointer font-mono text-[12px] text-ink-soft">
                       v{p.version} — {new Date(p.created_at).toLocaleDateString()}
                     </summary>
-                    <pre className="mt-2 whitespace-pre-wrap font-mono text-[12px] leading-relaxed text-ink-soft">{p.content}</pre>
+                    <Md className="mt-2 text-ink-soft">{p.content}</Md>
                   </details>
                 ))}
               </div>
