@@ -11,13 +11,13 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const link = ({ isActive }: { isActive: boolean }) =>
     `relative block rounded-md px-3 py-2 text-sm transition-colors ${
       isActive
-        ? 'bg-paper-deep font-semibold text-ink before:absolute before:left-0 before:top-2 before:bottom-2 before:w-0.5 before:rounded-full before:bg-accent'
-        : 'text-ink-soft hover:bg-paper-deep/60'
+        ? 'bg-white font-semibold text-ink shadow-card before:absolute before:left-0 before:top-2 before:bottom-2 before:w-0.5 before:rounded-full before:bg-accent'
+        : 'text-ink-soft hover:bg-white/60'
     }`
 
   return (
     <div className="flex min-h-screen">
-      <aside className="fixed inset-y-0 left-0 flex w-56 flex-col border-r border-line bg-paper px-4 py-6">
+      <aside className="fixed inset-y-0 left-0 flex w-56 flex-col border-r border-line bg-sand px-4 py-6">
         <div className="px-3">
           <span className="font-display text-2xl font-medium">Design<span className="text-accent">OS</span></span>
         </div>

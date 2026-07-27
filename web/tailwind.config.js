@@ -6,6 +6,7 @@ export default {
       colors: {
         paper: '#faf7f2',
         'paper-deep': '#f1ece3',
+        sand: '#f2ecdf',
         ink: '#1c1917',
         'ink-soft': '#57534e',
         'ink-faint': '#a8a29e',

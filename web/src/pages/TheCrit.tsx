@@ -148,6 +148,23 @@ export default function TheCrit() {
     }
   }
 
+  async function deleteSession(s: CritSession, e: React.MouseEvent) {
+    e.stopPropagation()
+    if (!window.confirm(`Delete the crit "${s.title}"? The conversation is removed permanently.`)) return
+    try {
+      // only delete stored image if it was uploaded for this crit — never a library item's image
+      if (s.image_path.startsWith('crits/')) {
+        await supabase.storage.from('inspiration').remove([s.image_path])
+      }
+      const { error } = await supabase.from('crit_sessions').delete().eq('id', s.id)
+      if (error) throw error
+      if (activeId === s.id) setActiveId(null)
+      qc.invalidateQueries({ queryKey: ['crit_sessions'] })
+    } catch (er) {
+      setErr(er instanceof Error ? er.message : 'Delete failed')
+    }
+  }
+
   async function capture() {
     if (!activeId) return
     setErr('')
@@ -285,13 +302,20 @@ export default function TheCrit() {
           <p className="label-mono">Past crits</p>
           <div className="mt-2 space-y-2">
             {sessions.map(s => (
-              <button key={s.id} className="flex w-full items-center gap-4 rounded-xl border border-line bg-white p-3 text-left shadow-card transition-shadow hover:shadow-panel" onClick={() => { setActiveId(s.id); setCaptured(null) }}>
+              <div key={s.id} role="button" tabIndex={0} className="flex w-full cursor-pointer items-center gap-4 rounded-xl border border-line bg-white p-3 text-left shadow-card transition-shadow hover:shadow-panel" onClick={() => { setActiveId(s.id); setCaptured(null) }}>
                 <ItemImage path={s.image_path} alt={s.title} className="h-14 w-20 shrink-0 rounded-md border border-line" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-display text-base font-medium">{s.title}</p>
-                  <p className="font-mono text-[11px] text-ink-faint">{new Date(s.created_at).toLocaleDateString()}</p>
+                  <p className="font-mono text-[11px] text-ink-faint">{new Date(s.created_at).toLocaleDateString()} · click to resume</p>
                 </div>
-              </button>
+                <button
+                  className="shrink-0 rounded-md px-2 py-1 font-mono text-[11px] uppercase tracking-wide text-ink-faint transition-colors hover:bg-accent-soft hover:text-accent"
+                  onClick={e => deleteSession(s, e)}
+                  title="Delete this crit"
+                >
+                  Delete
+                </button>
+              </div>
             ))}
           </div>
         </div>
