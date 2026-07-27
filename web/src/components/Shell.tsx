@@ -30,6 +30,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             )}
           </NavLink>
           <NavLink to="/brands" className={link}>Brands</NavLink>
+          <NavLink to="/profile" className={link}>Style profile</NavLink>
         </nav>
         <button className="btn-accent w-full justify-center" onClick={() => setIngestOpen(true)}>
           + Add inspiration

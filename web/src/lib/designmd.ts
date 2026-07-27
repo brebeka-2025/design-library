@@ -5,7 +5,21 @@ import type { Brand, Item, AestheticFamily, DesignType } from './types'
  * the committed visual world. This is the integration seam: the library
  * manufactures taste context; Impeccable's 23 commands execute inside it.
  */
-export function buildDesignMd(item: Item, family: AestheticFamily | null, brand: Brand | null, designType: DesignType | null): string {
+export interface ProfileRef { version: number; content: string }
+
+function profileSection(profile: ProfileRef | null): string[] {
+  if (!profile) return []
+  return [
+    `## Learned taste (style profile v${profile.version})`,
+    '',
+    'Rulings from past critiques. These override generic best practice when they conflict.',
+    '',
+    profile.content,
+    '',
+  ]
+}
+
+export function buildDesignMd(item: Item, family: AestheticFamily | null, brand: Brand | null, designType: DesignType | null, profile: ProfileRef | null = null): string {
   const t = item.style_tokens || {}
   const lines: string[] = []
   lines.push(`# DESIGN.md — ${item.title}`)
@@ -54,6 +68,7 @@ export function buildDesignMd(item: Item, family: AestheticFamily | null, brand:
     }
   }
   lines.push('')
+  lines.push(...profileSection(profile))
   lines.push('## Anti-references (never do)')
   lines.push('')
   lines.push('- No Inter font. No purple-to-blue gradients. No 3D SaaS blobs.')
@@ -73,7 +88,7 @@ export function buildDesignMd(item: Item, family: AestheticFamily | null, brand:
  * Brand-level DESIGN.md: the brand's base visual world, usable in Claude Code
  * even without an inspiration item. Item exports layer inspiration on top.
  */
-export function buildBrandDesignMd(brand: Brand): string {
+export function buildBrandDesignMd(brand: Brand, profile: ProfileRef | null = null): string {
   const t = brand.tokens || {}
   const L: string[] = []
   L.push(`# DESIGN.md — ${brand.name} brand`)
@@ -117,6 +132,7 @@ export function buildBrandDesignMd(brand: Brand): string {
   if (t.imagery) { L.push('## Imagery'); L.push(''); L.push(t.imagery); L.push('') }
   if (t.motion) { L.push('## Motion'); L.push(''); L.push(t.motion); L.push('') }
   if (brand.voice_rules) { L.push('## Voice'); L.push(''); L.push(brand.voice_rules); L.push('') }
+  L.push(...profileSection(profile))
   L.push('## Anti-references (never do)')
   L.push('')
   const never = t.never?.length ? t.never : []

@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { useBrands } from '../hooks/useData'
+import { useBrands, useCurrentProfile } from '../hooks/useData'
 import { buildBrandDesignMd, downloadText } from '../lib/designmd'
 import BrandWizard from '../components/BrandWizard'
 import type { Brand } from '../lib/types'
 
 export default function Brands() {
   const brands = useBrands().data ?? []
+  const profile = useCurrentProfile()
   const [wizard, setWizard] = useState<{ open: boolean; brand: Brand | null }>({ open: false, brand: null })
 
   function hasGuidelines(b: Brand): boolean {
@@ -54,7 +55,7 @@ export default function Brands() {
               <div className="flex shrink-0 gap-2">
                 {hasGuidelines(b) ? (
                   <>
-                    <button className="btn-secondary" onClick={() => downloadText(`DESIGN-${b.key}.md`, buildBrandDesignMd(b))}>
+                    <button className="btn-secondary" onClick={() => downloadText(`DESIGN-${b.key}.md`, buildBrandDesignMd(b, profile))}>
                       Export DESIGN.md
                     </button>
                     <button className="btn-ghost" onClick={() => setWizard({ open: true, brand: b })}>Edit</button>

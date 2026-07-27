@@ -60,6 +60,70 @@ export function useUpdateItem() {
   })
 }
 
+export interface StyleProfile {
+  id: string
+  version: number
+  content: string
+  status: 'draft' | 'approved' | 'superseded'
+  created_at: string
+}
+
+export function useProfiles() {
+  return useQuery({
+    queryKey: ['style_profiles'],
+    queryFn: async (): Promise<StyleProfile[]> => {
+      const { data, error } = await supabase.from('style_profiles').select('*').order('version', { ascending: false })
+      if (error) throw error
+      return data
+    },
+  })
+}
+
+export function useCurrentProfile(): StyleProfile | null {
+  const profiles = useProfiles().data ?? []
+  return profiles.find(p => p.status === 'approved') ?? null
+}
+
+export function useSaveProfileDraft() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ content, existingDraftId, nextVersion }: { content: string; existingDraftId?: string; nextVersion: number }) => {
+      if (existingDraftId) {
+        const { error } = await supabase.from('style_profiles').update({ content }).eq('id', existingDraftId)
+        if (error) throw error
+      } else {
+        const { error } = await supabase.from('style_profiles').insert({ version: nextVersion, content, status: 'draft' })
+        if (error) throw error
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['style_profiles'] }),
+  })
+}
+
+export function useApproveProfile() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (draftId: string) => {
+      const { error: supErr } = await supabase.from('style_profiles').update({ status: 'superseded' }).eq('status', 'approved')
+      if (supErr) throw supErr
+      const { error } = await supabase.from('style_profiles').update({ status: 'approved' }).eq('id', draftId)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['style_profiles'] }),
+  })
+}
+
+export function useDiscardProfileDraft() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (draftId: string) => {
+      const { error } = await supabase.from('style_profiles').delete().eq('id', draftId)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['style_profiles'] }),
+  })
+}
+
 export function useInsertItem() {
   const qc = useQueryClient()
   return useMutation({

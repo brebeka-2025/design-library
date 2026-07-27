@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { Item } from '../lib/types'
-import { useBrands, useDesignTypes, useFamilies, useUpdateItem } from '../hooks/useData'
+import { useBrands, useDesignTypes, useFamilies, useUpdateItem, useCurrentProfile } from '../hooks/useData'
 import { supabase } from '../lib/supabase'
 import { analyzeItem } from '../lib/api'
 import { buildDesignMd, downloadText } from '../lib/designmd'
@@ -30,6 +30,7 @@ export default function ItemDetail({ item, onClose }: { item: Item; onClose: () 
   const types = useDesignTypes().data ?? []
   const families = useFamilies().data ?? []
   const update = useUpdateItem()
+  const profile = useCurrentProfile()
   const qc = useQueryClient()
 
   const [draft, setDraft] = useState<Item>(item)
@@ -216,7 +217,7 @@ export default function ItemDetail({ item, onClose }: { item: Item; onClose: () 
             </button>
             <CopyButton label="Copy brief" text={draft.brief} />
             <CopyButton label="Copy image prompt" text={draft.image_recipe} />
-            <button className="btn-ghost" onClick={() => downloadText(`DESIGN-${draft.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.md`, buildDesignMd(draft, family, brand, dtype))}>
+            <button className="btn-ghost" onClick={() => downloadText(`DESIGN-${draft.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.md`, buildDesignMd(draft, family, brand, dtype, profile))}>
               Export DESIGN.md
             </button>
           </div>
