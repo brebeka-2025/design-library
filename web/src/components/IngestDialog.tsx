@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { captureUrl, analyzeItem } from '../lib/api'
@@ -12,6 +13,7 @@ export default function IngestDialog({ onClose }: { onClose: () => void }) {
   const types = useDesignTypes().data ?? []
   const insert = useInsertItem()
   const qc = useQueryClient()
+  const navigate = useNavigate()
 
   const [tab, setTab] = useState<'url' | 'image'>('url')
   const [url, setUrl] = useState('')
@@ -80,7 +82,8 @@ export default function IngestDialog({ onClose }: { onClose: () => void }) {
         qc.invalidateQueries({ queryKey: ['families'] })
       }
       setStep('done')
-      setTimeout(onClose, 900)
+      // land where the action is visible: the new item sits in the review queue
+      setTimeout(() => { onClose(); navigate('/review') }, 700)
     } catch (err) {
       setStep('error')
       setError(err instanceof Error ? err.message : 'Something went wrong')
